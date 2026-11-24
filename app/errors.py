@@ -18,6 +18,9 @@ MESSAGES = {
     "GATE_BLOCKED": "存在阻断项，不能签发",
     "NOT_APPROVED": "批次尚未签发",
     "BAD_REQUEST": "请求内容不完整",
+    "WAIVER_EARLIER_PENDING": "存在到期更早的待签账单，当前账单不能占用其减免额度",
+    "WAIVER_DUE_MONTH_UNKNOWN": "无法确定账单到期月份",
+    "WAIVER_AMOUNT_UNKNOWN": "无法确定账单原复算金额",
 }
 
 

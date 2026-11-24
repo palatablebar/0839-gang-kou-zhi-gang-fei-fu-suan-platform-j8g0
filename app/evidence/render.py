@@ -19,5 +19,7 @@ def render(run):
         "summary": run["summary"],
         "review": {"status": run["status"], "revision": run["revision"], "comment": run["comment"]},
     }
+    if run.get("waiver"):
+        artifact["waiver"] = run["waiver"]
     artifact["artifact_sha256"] = stable_digest(artifact)
     return artifact

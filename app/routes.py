@@ -51,7 +51,27 @@ def get_run(run_id):
     run = serialize(store().get(run_id))
     if not run:
         raise DomainIssue("RUN_NOT_FOUND", 404)
+    grant = _grant_view(store(), run_id)
+    if grant:
+        run["waiver"] = grant
     return jsonify(run)
+
+
+def _grant_view(store_, run_id):
+    grant = store_.grant_for(run_id)
+    if grant is None:
+        return None
+    status = store_.quota_status(grant["due_month"])[0]
+    return {
+        "due_month": grant["due_month"],
+        "original_cents": grant["amount_cents"],
+        "waiver_cents": grant["waiver_cents"],
+        "paid_cents": grant["paid_cents"],
+        "quota_cents": status["quota_cents"],
+        "used_cents": status["used_cents"],
+        "remaining_cents": status["remaining_cents"],
+        "already_issued": True,
+    }
 
 
 @api.post("/api/runs/<run_id>/review")
@@ -65,7 +85,16 @@ def review(run_id):
 @api.get("/api/runs/<run_id>/evidence")
 def evidence(run_id):
     run = serialize(store().get(run_id))
+    grant = _grant_view(store(), run_id)
+    if grant:
+        run["waiver"] = grant
     return jsonify(render(run))
+
+
+@api.get("/api/waiver/quotas")
+def waiver_quotas():
+    due_month = request.args.get("due_month")
+    return jsonify(quotas=store().quota_status(due_month))
 
 
 @api.get("/api/examples/<profile>")

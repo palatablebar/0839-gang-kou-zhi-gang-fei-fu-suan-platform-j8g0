@@ -13,6 +13,32 @@
     return data;
   }
   function setNotice(text) { $('notice').textContent = text || ''; }
+  function fmtCents(value) {
+    if (value === null || value === undefined) return '--';
+    return (Number(value) / 100).toFixed(2) + ' 元';
+  }
+  async function loadQuota(month) {
+    try {
+      var url = '/api/waiver/quotas' + (month ? '?due_month=' + encodeURIComponent(month) : '');
+      var data = await request(url);
+      var q = data.quotas && data.quotas.length ? data.quotas[0] : null;
+      if (!q) {
+        $('quota-total').textContent = '--';
+        $('quota-used').textContent = '--';
+        $('quota-pending').textContent = '--';
+        return;
+      }
+      $('quota-total').textContent = q.due_month + ' · ' + fmtCents(q.quota_cents);
+      $('quota-used').textContent = fmtCents(q.used_cents) + ' / ' + fmtCents(q.remaining_cents);
+      $('quota-pending').textContent = q.pending_runs + ' 张 · ' + fmtCents(q.pending_amount_cents);
+    } catch (error) { setNotice(error.message); }
+  }
+  function renderWaiver(run) {
+    if (!run || !run.waiver) return;
+    var w = run.waiver;
+    setNotice('签发完成：到期月份 ' + w.due_month + '，减免 ' + fmtCents(w.waiver_cents) +
+      '，实收 ' + fmtCents(w.paid_cents) + '（原复算 ' + fmtCents(w.original_cents) + '）');
+  }
   function renderIssues(data) {
     $('issue-count').textContent = data.issues.length + ' 条';
     $('issue-list').innerHTML = data.issues.length ? data.issues.map(function (item) {
@@ -85,6 +111,15 @@
     } catch (error) { setNotice(error.message); }
     finally { document.body.removeAttribute('aria-busy'); }
   }
+  function runDueMonth(run) {
+    if (run && run.waiver) return run.waiver.due_month;
+    if (run && run.rows) {
+      var months = run.rows.map(function (r) { return r.free_end ? String(r.free_end).slice(0, 7) : null; })
+        .filter(Boolean).sort();
+      return months.length ? months[0] : null;
+    }
+    return null;
+  }
   async function runBatch() {
     try {
       setNotice('');
@@ -99,6 +134,7 @@
       $('hold').disabled = state.approved;
       $('download').hidden = !state.approved;
       if (state.approved) $('download').href = '/api/runs/' + run.run_id + '/evidence';
+      await loadQuota(runDueMonth(run));
     } catch (error) { setNotice(error.message); }
     finally { $('run').disabled = false; }
   }
@@ -117,6 +153,8 @@
       $('hold').disabled = true;
       $('download').hidden = !state.approved;
       if (state.approved) $('download').href = '/api/runs/' + run.run_id + '/evidence';
+      await loadQuota(runDueMonth(run));
+      renderWaiver(run);
     } catch (error) { setNotice(error.message); }
   }
   async function boot() {
@@ -136,6 +174,7 @@
       state.run = null; state.approved = false;
       $('sign').disabled = true; $('hold').disabled = true; $('download').hidden = true;
       $('run-status').textContent = '未执行批次'; $('revision').textContent = 'rev 0';
+      $('quota-total').textContent = '--'; $('quota-used').textContent = '--'; $('quota-pending').textContent = '--';
       loadStage('intake');
     });
   }

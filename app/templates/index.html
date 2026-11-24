@@ -30,6 +30,11 @@
     <article class="panel" id="panel-review">
       <div class="panel-head"><h2>批次复核</h2><span class="hint" id="revision">rev 0</span></div>
       <div class="review">
+        <div class="quota" id="quota-box">
+          <div class="ledger-row"><span>当月减免额度</span><strong id="quota-total">--</strong></div>
+          <div class="ledger-row"><span>已用 / 剩余</span><strong id="quota-used">--</strong></div>
+          <div class="ledger-row"><span>待签账单</span><strong id="quota-pending">--</strong></div>
+        </div>
         <label for="comment">复核意见</label>
         <textarea id="comment" placeholder="核验来源、边界与批次结论"></textarea>
         <div class="review-actions">
